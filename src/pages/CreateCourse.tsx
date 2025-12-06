@@ -83,7 +83,9 @@ const CreateCourse = () => {
 
             // Get JWT token from localStorage
             // const token = localStorage.getItem('jwt_token');
-            const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Imluc3RydWN0b3IxQGV4YW1wbGUuY29tIiwiaWQiOiJmODMxYjY2MC1mNGIzLTQ0YzQtOWQwZC00NDUzYTRkOWIyMGUiLCJyb2xlIjoiaW5zdHJ1Y3RvciIsImlhdCI6MTc2NTAxMDI2NSwiZXhwIjoxNzY1MDk2NjY1fQ.x4uVG_12OghbIrhJQBL0Rfim7PzpVx9kn2OaVnao7BI"
+            const token = localStorage.getItem('userToken') ?
+                localStorage.getItem('userToken') :
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Imluc3RydWN0b3IxQGV4YW1wbGUuY29tIiwiaWQiOiJmODMxYjY2MC1mNGIzLTQ0YzQtOWQwZC00NDUzYTRkOWIyMGUiLCJyb2xlIjoiaW5zdHJ1Y3RvciIsImlhdCI6MTc2NTAxMDI2NSwiZXhwIjoxNzY1MDk2NjY1fQ.x4uVG_12OghbIrhJQBL0Rfim7PzpVx9kn2OaVnao7BI"
 
 
             if (!token) {
