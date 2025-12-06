@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Sun, Moon, BookOpen, User } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import Logo from '../ui/Logo';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,6 +10,8 @@ const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const { isAuthenticated, user, logoutContext } = useAuth();
+  const displayName = user?.name || user?.email?.split('@')[0] || 'User';
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -49,17 +52,32 @@ const Navbar = () => {
                 className={`px-3 py-2 rounded-md text-sm font-medium ${isHomePage && !isScrolled ? 'text-white hover:bg-white/10' : 'text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
                 Courses
               </Link>
-              <Link 
+              {/* Dashboard Link (Chỉ hiện khi Đăng nhập) */}
+              { isAuthenticated && (<Link 
                 to="/dashboard" 
                 className={`px-3 py-2 rounded-md text-sm font-medium ${isHomePage && !isScrolled ? 'text-white hover:bg-white/10' : 'text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
                 Dashboard
-              </Link>
+              </Link>)}
               <button
                 onClick={toggleTheme}
                 className={`p-2 rounded-full ${isHomePage && !isScrolled ? 'text-white hover:bg-white/10' : 'text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                 aria-label="Toggle dark mode">
                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
               </button>
+              {isAuthenticated ? (
+                // ĐÃ ĐĂNG NHẬP: Hiển thị tên và nút Logout
+                <div className="flex items-center space-x-2">
+                    <span className={`text-sm font-medium ${isHomePage && !isScrolled ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                        Hi, {displayName}
+                    </span>
+                    <button
+                        onClick={logoutContext} 
+                        className="py-2 px-4 rounded-md text-white bg-red-700 hover:bg-red-800 transition-colors text-sm">
+                        Log Out
+                    </button>
+                </div>
+              ) : (
+                <>
               <Link
                 to="/signin"
                 className="btn btn-outline">
@@ -70,6 +88,7 @@ const Navbar = () => {
                 className="py-2 px-4 rounded-md text-white bg-red-700 hover:bg-red-800 transition-colors">
                 Sign Up
               </Link>
+              </>)}
             </div>
           </div>
 
