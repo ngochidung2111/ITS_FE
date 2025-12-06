@@ -1,18 +1,18 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = "http://localhost:3000";
 
 // Get auth token from localStorage
 const getAuthToken = () => {
-  return localStorage.getItem('userToken');
+  return localStorage.getItem("userToken");
 };
 
 // API instance with auth header
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 // Add token to requests
@@ -88,8 +88,11 @@ export const courseApi = {
   /**
    * Get lesson contents by lesson ID
    */
-  getLessonContents: async (courseId: string, lessonId: string): Promise<Lesson['contents']> => {
-    const response = await apiClient.get<Lesson['contents']>(
+  getLessonContents: async (
+    courseId: string,
+    lessonId: string
+  ): Promise<Lesson["contents"]> => {
+    const response = await apiClient.get<Lesson["contents"]>(
       `/courses/${courseId}/lessons/${lessonId}`
     );
     return response.data;
@@ -108,8 +111,10 @@ export const courseApi = {
   /**
    * Get course instructor info
    */
-  getCourseInstructor: async (courseId: string): Promise<CourseBasicInfo['instructor']> => {
-    const response = await apiClient.get<CourseBasicInfo['instructor']>(
+  getCourseInstructor: async (
+    courseId: string
+  ): Promise<CourseBasicInfo["instructor"]> => {
+    const response = await apiClient.get<CourseBasicInfo["instructor"]>(
       `/courses/${courseId}/instructor`
     );
     return response.data;
@@ -146,7 +151,10 @@ export const courseApi = {
   /**
    * Create a new lesson for a course
    */
-  createLesson: async (courseId: string, lessonData: { lessonName: string; order: number }): Promise<Lesson> => {
+  createLesson: async (
+    courseId: string,
+    lessonData: { lessonName: string; order: number }
+  ): Promise<Lesson> => {
     const response = await apiClient.post<Lesson>(
       `/courses/${courseId}/lessons`,
       lessonData
@@ -157,7 +165,11 @@ export const courseApi = {
   /**
    * Update a lesson
    */
-  updateLesson: async (courseId: string, lessonId: string, lessonData: { lessonName?: string; order?: number }): Promise<Lesson> => {
+  updateLesson: async (
+    courseId: string,
+    lessonId: string,
+    lessonData: { lessonName?: string; order?: number }
+  ): Promise<Lesson> => {
     const response = await apiClient.put<Lesson>(
       `/courses/${courseId}/lessons/${lessonId}`,
       lessonData
@@ -206,14 +218,23 @@ export const courseApi = {
   /**
    * Delete lesson content
    */
-  deleteLessonContent: async (courseId: string, lessonId: string, contentId: string): Promise<void> => {
-    await apiClient.delete(`/courses/${courseId}/lessons/${lessonId}/contents/${contentId}`);
+  deleteLessonContent: async (
+    courseId: string,
+    lessonId: string,
+    contentId: string
+  ): Promise<void> => {
+    await apiClient.delete(
+      `/courses/${courseId}/lessons/${lessonId}/contents/${contentId}`
+    );
   },
 
   /**
    * Create a quiz for a course
    */
-  createQuiz: async (courseId: string, quizData: { title: string; timeLimit: number }): Promise<Quiz> => {
+  createQuiz: async (
+    courseId: string,
+    quizData: { title: string; timeLimit: number }
+  ): Promise<Quiz> => {
     const response = await apiClient.post<Quiz>(
       `/courses/${courseId}/quizzes`,
       quizData
@@ -224,7 +245,11 @@ export const courseApi = {
   /**
    * Update a quiz
    */
-  updateQuiz: async (courseId: string, quizId: string, quizData: { title?: string; timeLimit?: number }): Promise<Quiz> => {
+  updateQuiz: async (
+    courseId: string,
+    quizId: string,
+    quizData: { title?: string; timeLimit?: number }
+  ): Promise<Quiz> => {
     const response = await apiClient.put<Quiz>(
       `/courses/${courseId}/quizzes/${quizId}`,
       quizData
@@ -249,11 +274,14 @@ export const courseApi = {
   /**
    * Update course info
    */
-  updateCourse: async (courseId: string, courseData: Partial<CourseBasicInfo>): Promise<CourseBasicInfo> => {
-    const response = await apiClient.put<CourseBasicInfo>(
+  updateCourse: async (
+    courseId: string,
+    courseData: Partial<CourseBasicInfo>
+  ): Promise<CourseBasicInfo> => {
+    const response = await apiClient.patch<CourseBasicInfo>(
       `/courses/${courseId}`,
       courseData
     );
     return response.data;
-  }
+  },
 };
