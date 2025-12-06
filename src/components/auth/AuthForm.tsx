@@ -85,7 +85,7 @@ const AuthForm = ({ type }: AuthFormProps) => {
           };
             
           const result = await login(loginPayload);
-          loginContext(result.user, result.token);
+          loginContext(result.user, result.access_token);
           navigate('/'); 
         }
     } catch (err: any) {
