@@ -165,7 +165,7 @@ const CreateCourse = () => {
                 {/* Header */}
                 <div className="mb-8">
                     <Link
-                        to="/courses"
+                        to="/instructor/courses"
                         className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
                     >
                         <ArrowLeft className="h-4 w-4 mr-2" />
