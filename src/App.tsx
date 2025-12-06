@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import CourseCatalog from './pages/CourseCatalog';
@@ -33,19 +34,21 @@ function App() {
   }
   return (
     <ThemeProvider>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path="courses" element={<CourseCatalog />} />
-          <Route path="courses/:courseId" element={<CourseDetail />} />
-          <Route path="signin" element={<SignIn />} />
-          <Route path="signup" element={<SignUp />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="lecture/:courseId/:lectureId" element={<VideoLecture />} />
-          <Route path="quiz/:quizId" element={<Quiz />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="courses" element={<CourseCatalog />} />
+            <Route path="courses/:courseId" element={<CourseDetail />} />
+            <Route path="signin" element={<SignIn />} />
+            <Route path="signup" element={<SignUp />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="lecture/:courseId/:lectureId" element={<VideoLecture />} />
+            <Route path="quiz/:quizId" element={<Quiz />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

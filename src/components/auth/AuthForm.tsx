@@ -1,17 +1,100 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { login, register } from '../../services/localauth.api';
+import {type LoginDto, type RegisterDto} from '../../types/auth';
+import { useAuth } from '../../context/AuthContext';
+
 interface AuthFormProps {
   type: 'signin' | 'signup';
 }
 const AuthForm = ({ type }: AuthFormProps) => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const handleSubmit = (e: React.FormEvent) => {
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [error, setError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string | null }>({}); 
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { loginContext } = useAuth();
+  const validateForm = () => {
+      setPasswordError(null);
+      let errors: { [key: string]: string | null } = {};
+      let isValid = true;
+
+      if (!email) {
+        errors.email = "Email is required.";
+        isValid = false;
+      } else if (!/\S+@\S+\.\S+/.test(email)) {
+        errors.email = "Invalid email address format.";
+        isValid = false;
+      }
+
+      if (!password) {
+        errors.password = "Password is required.";
+        isValid = false;
+      }
+
+      if (type === 'signup') {
+        if (!name) {
+          errors.name = "Full Name is required.";
+          isValid = false;
+        }
+        if (!confirmPassword){
+          setPasswordError('Comfirm password is required.');
+          isValid = false;
+        } 
+        else if (password !== confirmPassword) {
+          setPasswordError('Password and Confirm Password do not match.');
+          isValid = false;
+        }
+      }
+    setFieldErrors(errors);
+    return isValid;
+  };
+  const handleSubmit = async(e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError(null)
+    if (!validateForm()){
+      return;
+    }
+    try {
+      if (type === 'signup') {
+        const registerPayload: RegisterDto = {
+          email,
+          password,
+          name
+        };
+            
+        await register(registerPayload); 
+            
+        alert('Registration successful! Please sign in.');
+        navigate('/signin'); 
+
+        } else { // type === 'signin'
+          const loginPayload: LoginDto = {
+            email, 
+            password,
+          };
+            
+          const result = await login(loginPayload);
+          loginContext(result.user, result.token);
+          navigate('/'); 
+        }
+    } catch (err: any) {
+        const apiError = err.response?.data?.message || 'Login/Registration failed. Please check your credentials.';
+        setError(apiError)
+    } finally {
+        setIsSubmitting(false);
+    }
+    
     console.log({ email, password, name, rememberMe });
   };
   return (
@@ -19,7 +102,12 @@ const AuthForm = ({ type }: AuthFormProps) => {
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
         {type === 'signin' ? 'Sign in to your account' : 'Create a new account'}
       </h2>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
+          {error}
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {type === 'signup' && (
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -39,6 +127,9 @@ const AuthForm = ({ type }: AuthFormProps) => {
                 className="input pl-10"
                 placeholder="John Doe"/>
             </div>
+            {fieldErrors.name && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.name}</p>
+            )}
           </div>
         )}
 
@@ -61,6 +152,9 @@ const AuthForm = ({ type }: AuthFormProps) => {
               className="input pl-10"
               placeholder="you@example.com"/>
           </div>
+          {fieldErrors.email && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.email}</p>
+          )}
         </div>
 
         <div>
@@ -100,7 +194,51 @@ const AuthForm = ({ type }: AuthFormProps) => {
               )}
             </button>
           </div>
+          {fieldErrors.password && ( // Hiển thị lỗi Password
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{fieldErrors.password}</p>
+          )}
         </div>
+        {type === 'signup' && (
+          <div>
+            <div className="flex items-center justify-between">
+              <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Confirm Password
+              </label>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                id="confirm-password"
+                name="confirm-password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                required
+                // Sử dụng state confirmPassword đã thêm
+                value={confirmPassword} 
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="input pl-10 pr-10"
+                placeholder="Confirm Password"/>
+              
+              {/* Nút hiện/ẩn mật khẩu (dùng chung state showPassword) */}
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}>
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-400 hover:text-gray-500" />
+                )}
+              </button>
+            </div>
+            {passwordError && ( 
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{passwordError}</p>
+            )}
+          </div>
+        )}
 
         {type === 'signin' && (
           <div className="flex items-center">
