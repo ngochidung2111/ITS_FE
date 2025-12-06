@@ -12,6 +12,8 @@ import Dashboard from './pages/Dashboard';
 import VideoLecture from './pages/VideoLecture';
 import Quiz from './pages/Quiz';
 import NotFound from './pages/NotFound';
+import PublicCourses from './pages/PublicCourses';
+import CreateCourse from './pages/CreateCourse';
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
@@ -39,6 +41,7 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<HomePage />} />
             <Route path="courses" element={<CourseCatalog />} />
+            <Route path="courses/create" element={<CreateCourse />} />
             <Route path="courses/:courseId" element={<CourseDetail />} />
             <Route path="signin" element={<SignIn />} />
             <Route path="signup" element={<SignUp />} />
