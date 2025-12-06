@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { Content } from "../types/course";
 
 const API_BASE_URL = "http://localhost:3000";
 
@@ -153,7 +154,7 @@ export const courseApi = {
    */
   createLesson: async (
     courseId: string,
-    lessonData: { lessonName: string; order: number }
+    lessonData: { lessonName: string; order?: number; content?: Content[] }
   ): Promise<Lesson> => {
     const response = await apiClient.post<Lesson>(
       `/courses/${courseId}/lessons`,

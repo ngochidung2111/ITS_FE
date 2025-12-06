@@ -14,6 +14,9 @@ import {
   Play
 } from 'lucide-react';
 import { courseApi, type Lesson, type Quiz, type LessonContent } from '../services/courseApi';
+import ModalEditCourse from '../components/courses/ModalEditCourse';
+import ModalCreateLesson from '../components/lessons/ModalCreateLesson';
+import type { CreateLessonData } from '../types/course';
 
 interface CourseDetail {
   id: string;
@@ -43,6 +46,7 @@ const InstructorCourseDetail = () => {
     description: '',
     price: ''
   });
+  const [isCreateLessonOpen, setIsCreateLessonOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -124,6 +128,17 @@ const InstructorCourseDetail = () => {
       alert("Failed to update course");
     }
 };
+
+  const handleCreateLesson = async (data: CreateLessonData) => {
+    try {
+      const newLesson = await courseApi.createLesson(courseId!, data);
+      setLessons([...lessons, newLesson]);
+      setIsCreateLessonOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create lesson");
+    }
+  };
 
 
   const handleDeleteContent = async (lessonId: string, contentId: string) => {
@@ -276,7 +291,7 @@ const InstructorCourseDetail = () => {
                   <BookOpen size={24} className="mr-3" />
                   Lessons ({lessons.length})
                 </h2>
-                <button className="btn btn-primary flex items-center text-sm">
+                <button onClick={() => setIsCreateLessonOpen(true)} className="btn btn-primary flex items-center text-sm">
                   <Plus size={16} className="mr-1" />
                   Add Lesson
                 </button>
@@ -448,62 +463,10 @@ const InstructorCourseDetail = () => {
       </div>
 
       {/* EDIT COURSE MODAL */}
-      {isEditOpen && (
-        <div className="fixed inset-0 backdrop-blur-xs flex justify-center items-center z-50">
-          <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-lg p-6 shadow-lg">
-            <h2 className="text-xl font-bold mb-4">Edit Course</h2>
+      {isEditOpen && <ModalEditCourse editData={editData} setEditData={setEditData} setIsEditOpen={setIsEditOpen} handleUpdateCourse={handleUpdateCourse} />}
 
-            {/* TITLE */}
-            <label className="block mb-3">
-              <span className="text-gray-700 dark:text-gray-300">Title</span>
-              <input
-                type="text"
-                className="input w-full mt-1"
-                value={editData.title}
-                onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-              />
-            </label>
-
-            {/* DESCRIPTION */}
-            <label className="block mb-3">
-              <span className="text-gray-700 dark:text-gray-300">Description</span>
-              <textarea
-                className="input w-full mt-1"
-                rows={3}
-                value={editData.description}
-                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-              />
-            </label>
-
-            {/* PRICE */}
-            <label className="block mb-3">
-              <span className="text-gray-700 dark:text-gray-300">Price</span>
-              <input
-                type="number"
-                className="input w-full mt-1"
-                value={editData.price}
-                onChange={(e) => setEditData({ ...editData, price: e.target.value })}
-              />
-            </label>
-
-            {/* ACTION BUTTONS */}
-            <div className="flex justify-end gap-3 mt-4">
-              <button
-                onClick={() => setIsEditOpen(false)}
-                className="btn btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateCourse}
-                className="btn btn-primary"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* CREATE LESSON MODAL */}
+      {isCreateLessonOpen && <ModalCreateLesson isOpen={isCreateLessonOpen} onClose={() => setIsCreateLessonOpen(false)} onSubmit={handleCreateLesson} />}
 
     </div>
 
