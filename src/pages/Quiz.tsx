@@ -1,49 +1,63 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, CheckCircle, AlertTriangle, Clock, Flag, HelpCircle } from 'lucide-react';
-import courses, { type Course, type Quiz, type Question } from '../utils/courses';
+import { courseApi, type CourseBasicInfo, type QuizDetail, type QuizQuestion } from '../services/courseApi';
 
 const QuizPage = () => {
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
-  
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
-  const [course, setCourse] = useState<Course | null>(null);
+
+  const [quiz, setQuiz] = useState<QuizDetail | null>(null);
+  const [course, setCourse] = useState<CourseBasicInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
-  const [timeLeft, setTimeLeft] = useState(900); 
+  const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
+  const [timeLeft, setTimeLeft] = useState(900);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [flaggedQuestions, setFlaggedQuestions] = useState<number[]>([]);
-  
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    let foundQuiz: Quiz | null = null;
-    let foundCourse: Course | null = null;
-    
-    for (const course of courses) {
-      const quiz = course.quizzes.find(q => q.id === quizId);
-      if (quiz) {
-        foundQuiz = quiz;
-        foundCourse = course;
-        break;
-      }
-    }
-    
-    if (foundQuiz && foundCourse) {
-      setQuiz(foundQuiz);
-      setCourse(foundCourse);
-      setSelectedOptions(new Array(foundQuiz.questions.length).fill(-1));
-      document.title = `${foundQuiz.title} | ITS`;
-    }
+  const [error, setError] = useState<string | null>(null);
 
-    setTimeout(() => {
-      setLoading(false);
-    }, 800);
-    
+  // Fetch quiz detail and course info
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      if (!quizId) {
+        setError('Missing quiz information.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch quiz detail by quiz id, then fetch its course info using returned courseId
+        const quizDetail = await courseApi.getQuizDetailById(quizId);
+        const courseInfo = await courseApi.getCourseDetail(quizDetail.courseId);
+
+        setQuiz(quizDetail);
+        setCourse(courseInfo);
+        setSelectedAnswers(new Array(quizDetail.questions.length).fill(''));
+        setTimeLeft(quizDetail.timeLimit || 900);
+        document.title = `${quizDetail.title} | ITS`;
+      } catch (err) {
+        console.error('Failed to load quiz detail:', err);
+        setError('Failed to load quiz. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuiz();
+    window.scrollTo(0, 0);
+  }, [quizId]);
+
+  // Timer countdown
+  useEffect(() => {
+    if (!quiz || isSubmitted) return;
+
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
           handleSubmit();
@@ -52,76 +66,77 @@ const QuizPage = () => {
         return prev - 1;
       });
     }, 1000);
-    
+
     return () => clearInterval(timer);
-  }, [quizId]);
-  
-  const handleOptionSelect = (questionIndex: number, optionIndex: number) => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quiz, isSubmitted]);
+
+  const handleOptionSelect = (questionIndex: number, answerId: string) => {
     if (isSubmitted) return;
-    
-    const newSelectedOptions = [...selectedOptions];
-    newSelectedOptions[questionIndex] = optionIndex;
-    setSelectedOptions(newSelectedOptions);
+    const updated = [...selectedAnswers];
+    updated[questionIndex] = answerId;
+    setSelectedAnswers(updated);
   };
-  
+
   const handleNext = () => {
-    if (currentQuestionIndex < (quiz?.questions.length || 0) - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+    if (!quiz) return;
+    if (currentQuestionIndex < quiz.questions.length - 1) {
+      setCurrentQuestionIndex((prev) => prev + 1);
     }
   };
-  
+
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+      setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
-  
+
   const toggleFlagged = (index: number) => {
-    if (flaggedQuestions.includes(index)) {
-      setFlaggedQuestions(flaggedQuestions.filter(i => i !== index));
-    } else {
-      setFlaggedQuestions([...flaggedQuestions, index]);
-    }
+    setFlaggedQuestions((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
   };
-  
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
-  
+
   const calculateScore = () => {
     if (!quiz) return 0;
-    
     let correctAnswers = 0;
+
     quiz.questions.forEach((question, index) => {
-      if (selectedOptions[index] === question.correctOptionIndex) {
+      const selectedId = selectedAnswers[index];
+      const selected = question.answers.find((a) => a.id === selectedId);
+      if (selected?.isCorrect) {
         correctAnswers++;
       }
     });
-    
+
     return Math.round((correctAnswers / quiz.questions.length) * 100);
   };
-  
+
   const handleSubmit = () => {
     const calculatedScore = calculateScore();
     setScore(calculatedScore);
     setIsSubmitted(true);
   };
-  
+
   const jumpToQuestion = (index: number) => {
     setCurrentQuestionIndex(index);
   };
-  
-  const isQuestionAnswered = (index: number) => {
-    return selectedOptions[index] !== -1;
-  };
-  
+
+  const isQuestionAnswered = (index: number) => selectedAnswers[index] !== '';
+
   const isQuestionCorrect = (index: number) => {
     if (!quiz) return false;
-    return selectedOptions[index] === quiz.questions[index].correctOptionIndex;
+    const selectedId = selectedAnswers[index];
+    const selected = quiz.questions[index].answers.find((a) => a.id === selectedId);
+    return !!selected?.isCorrect;
   };
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
@@ -129,28 +144,28 @@ const QuizPage = () => {
       </div>
     );
   }
-  
-  if (!quiz || !course) {
+
+  if (!quiz || !course || error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 pt-16 px-4">
         <AlertTriangle size={64} className="text-warning-500 mb-4" />
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Quiz Not Found</h1>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
-          The quiz you're looking for doesn't exist or has been removed.
+          {error || "The quiz you're looking for doesn't exist or has been removed."}
         </p>
-        <Link 
-          to={`/courses/${course?.id}`}
+        <button 
+          onClick={() => navigate(-1)}
           className="btn btn-primary flex items-center"
         >
           <ChevronLeft size={18} className="mr-2" />
-          Back to Course
-        </Link>
+          Go Back
+        </button>
       </div>
     );
   }
-  
-  const currentQuestion = quiz.questions[currentQuestionIndex];
-  
+
+  const currentQuestion: QuizQuestion = quiz.questions[currentQuestionIndex];
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
       <div className="container mx-auto px-4 py-8">
@@ -165,7 +180,7 @@ const QuizPage = () => {
               Back to Course
             </Link>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{quiz.title}</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">{quiz.description}</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Complete all questions within the time limit.</p>
           </div>
           
           {isSubmitted ? (
@@ -204,7 +219,7 @@ const QuizPage = () => {
                 <div className="space-y-6">
                   {quiz.questions.map((question, index) => (
                     <div 
-                      key={index}
+                      key={question.id}
                       className={`p-4 rounded-lg border ${
                         isQuestionCorrect(index)
                           ? 'border-success-200 bg-success-50 dark:border-success-900 dark:bg-success-900/20'
@@ -214,40 +229,40 @@ const QuizPage = () => {
                       <div className="flex items-start">
                         <span className="font-medium text-gray-800 dark:text-gray-200 mr-2">{index + 1}.</span>
                         <div className="flex-1">
-                          <p className="font-medium text-gray-800 dark:text-gray-200 mb-3">{question.text}</p>
+                          <p className="font-medium text-gray-800 dark:text-gray-200 mb-3">{question.questionName}</p>
                           <div className="space-y-2">
-                            {question.options.map((option, optionIndex) => (
+                            {question.answers.map((answer) => (
                               <div 
-                                key={optionIndex}
+                                key={answer.id}
                                 className={`p-3 rounded-md flex items-center ${
-                                  optionIndex === question.correctOptionIndex
+                                  answer.isCorrect
                                     ? 'bg-success-100 dark:bg-success-900/30 border border-success-200 dark:border-success-800'
-                                    : selectedOptions[index] === optionIndex
+                                    : selectedAnswers[index] === answer.id
                                       ? 'bg-error-100 dark:bg-error-900/30 border border-error-200 dark:border-error-800'
                                       : 'bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
                                 }`}
                               >
                                 <div className={`w-5 h-5 flex-shrink-0 rounded-full border ${
-                                  selectedOptions[index] === optionIndex
+                                  selectedAnswers[index] === answer.id
                                     ? 'bg-primary-600 border-primary-600 dark:bg-primary-500 dark:border-primary-500'
                                     : 'border-gray-400 dark:border-gray-500'
                                 } mr-3`}>
-                                  {selectedOptions[index] === optionIndex && (
+                                  {selectedAnswers[index] === answer.id && (
                                     <span className="flex items-center justify-center h-full text-white text-xs">
                                       ✓
                                     </span>
                                   )}
                                 </div>
                                 <span className={`${
-                                  optionIndex === question.correctOptionIndex
+                                  answer.isCorrect
                                     ? 'text-success-800 dark:text-success-200 font-medium'
-                                    : selectedOptions[index] === optionIndex
+                                    : selectedAnswers[index] === answer.id
                                       ? 'text-error-800 dark:text-error-200'
                                       : 'text-gray-700 dark:text-gray-300'
                                 }`}>
-                                  {option}
+                                  {answer.content}
                                 </span>
-                                {optionIndex === question.correctOptionIndex && (
+                                {answer.isCorrect && (
                                   <CheckCircle size={16} className="ml-auto text-success-600 dark:text-success-400" />
                                 )}
                               </div>
@@ -270,9 +285,9 @@ const QuizPage = () => {
                     onClick={() => {
                       setIsSubmitted(false);
                       setCurrentQuestionIndex(0);
-                      setSelectedOptions(new Array(quiz.questions.length).fill(-1));
+                      setSelectedAnswers(new Array(quiz.questions.length).fill(''));
                       setFlaggedQuestions([]);
-                      setTimeLeft(900);
+                      setTimeLeft(quiz.timeLimit || 900);
                     }}
                     className="btn btn-outline"
                   >
@@ -302,7 +317,7 @@ const QuizPage = () => {
                     <div className="flex items-start mb-6">
                       <div className="flex-1">
                         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                          {currentQuestion.text}
+                          {currentQuestion.questionName}
                         </h2>
                       </div>
                       <button 
@@ -320,34 +335,34 @@ const QuizPage = () => {
                     
                     {/* Options */}
                     <div className="space-y-3 mb-8">
-                      {currentQuestion.options.map((option, optionIndex) => (
+                      {currentQuestion.answers.map((answer) => (
                         <button
-                          key={optionIndex}
-                          onClick={() => handleOptionSelect(currentQuestionIndex, optionIndex)}
+                          key={answer.id}
+                          onClick={() => handleOptionSelect(currentQuestionIndex, answer.id)}
                           className={`w-full p-4 rounded-lg border text-left transition-colors ${
-                            selectedOptions[currentQuestionIndex] === optionIndex
+                            selectedAnswers[currentQuestionIndex] === answer.id
                               ? 'bg-primary-100 border-primary-300 dark:bg-primary-900/30 dark:border-primary-700'
                               : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750'
                           }`}
                         >
                           <div className="flex items-center">
                             <div className={`w-5 h-5 rounded-full border ${
-                              selectedOptions[currentQuestionIndex] === optionIndex
+                              selectedAnswers[currentQuestionIndex] === answer.id
                                 ? 'bg-primary-600 border-primary-600 dark:bg-primary-500 dark:border-primary-500'
                                 : 'border-gray-400 dark:border-gray-500'
                             } mr-3`}>
-                              {selectedOptions[currentQuestionIndex] === optionIndex && (
+                              {selectedAnswers[currentQuestionIndex] === answer.id && (
                                 <span className="flex items-center justify-center h-full text-white text-xs">
                                   ✓
                                 </span>
                               )}
                             </div>
                             <span className={`${
-                              selectedOptions[currentQuestionIndex] === optionIndex
+                              selectedAnswers[currentQuestionIndex] === answer.id
                                 ? 'text-gray-900 dark:text-white'
                                 : 'text-gray-700 dark:text-gray-300'
                             }`}>
-                              {option}
+                              {answer.content}
                             </span>
                           </div>
                         </button>
@@ -388,9 +403,9 @@ const QuizPage = () => {
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 sticky top-24">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Question Navigator</h3>
                   <div className="grid grid-cols-5 gap-2 mb-6">
-                    {quiz.questions.map((_, index) => (
+                    {quiz.questions.map((question, index) => (
                       <button
-                        key={index}
+                        key={question.id}
                         onClick={() => jumpToQuestion(index)}
                         className={`w-10 h-10 rounded-lg flex items-center justify-center font-medium
                           ${currentQuestionIndex === index 
@@ -429,12 +444,12 @@ const QuizPage = () => {
                   <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
                       <span>Answered:</span>
-                      <span className="font-medium">{selectedOptions.filter(opt => opt !== -1).length} of {quiz.questions.length}</span>
+                      <span className="font-medium">{selectedAnswers.filter((opt) => opt !== '').length} of {quiz.questions.length}</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-6">
                       <div 
                         className="bg-primary-600 h-2.5 rounded-full"
-                        style={{ width: `${(selectedOptions.filter(opt => opt !== -1).length / quiz.questions.length) * 100}%` }}
+                        style={{ width: `${(selectedAnswers.filter((opt) => opt !== '').length / quiz.questions.length) * 100}%` }}
                       ></div>
                     </div>
                     

@@ -64,6 +64,24 @@ export interface Quiz {
   courseId: string;
 }
 
+export interface QuizAnswer {
+  id: string;
+  content: string;
+  isCorrect: boolean;
+  questionId: string;
+}
+
+export interface QuizQuestion {
+  id: string;
+  questionName: string;
+  quizId: string;
+  answers: QuizAnswer[];
+}
+
+export interface QuizDetail extends Quiz {
+  questions: QuizQuestion[];
+}
+
 export const courseApi = {
   /**
    * Get basic course info (title, description, price, status)
@@ -101,6 +119,26 @@ export const courseApi = {
   getCourseQuizzes: async (courseId: string): Promise<Quiz[]> => {
     const response = await apiClient.get<Quiz[]>(
       `/courses/${courseId}/quizzes`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get quiz detail including questions and answers
+   */
+  getQuizDetail: async (courseId: string, quizId: string): Promise<QuizDetail> => {
+    const response = await apiClient.get<QuizDetail>(
+      `/courses/${courseId}/quizzes/${quizId}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get quiz detail by quiz id only
+   */
+  getQuizDetailById: async (quizId: string): Promise<QuizDetail> => {
+    const response = await apiClient.get<QuizDetail>(
+      `/courses/1/quizzes/${quizId}`
     );
     return response.data;
   },
