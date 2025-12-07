@@ -262,8 +262,8 @@ export const courseApi = {
   /**
    * Update a quiz
    */
-  updateQuiz: async (courseId: string, quizId: string, quizData: { title?: string; timeLimit?: number }): Promise<Quiz> => {
-    const response = await apiClient.put<Quiz>(
+  updateQuiz: async (courseId: string, quizId: string, quizData: { quizName?: string; timeLimit?: number }): Promise<Quiz> => {
+    const response = await apiClient.patch<Quiz>(
       `/courses/${courseId}/quizzes/${quizId}`,
       quizData
     );
@@ -275,6 +275,26 @@ export const courseApi = {
    */
   deleteQuiz: async (courseId: string, quizId: string): Promise<void> => {
     await apiClient.delete(`/courses/${courseId}/quizzes/${quizId}`);
+  },
+
+  /**
+   * Thêm Question mới vào Quiz
+   */
+  createQuestion: async (courseId: string, quizId: string, questionData: Omit<QuizQuestion, 'id' | 'quizId'>): Promise<QuizQuestion> => {
+      const response = await apiClient.post<QuizQuestion>(
+          `/courses/${courseId}/quizzes/${quizId}/questions`,
+          questionData
+      );
+      return response.data;
+  },
+
+  /**
+   * Xóa một Question cụ thể
+   */
+  deleteQuestion: async (courseId: string, quizId: string, questionId: string): Promise<void> => {
+      await apiClient.delete(
+          `/courses/${courseId}/quizzes/${quizId}/questions/${questionId}`
+      );
   },
 
   /**
