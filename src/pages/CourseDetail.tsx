@@ -331,8 +331,8 @@ const CourseDetail = () => {
                     
                     <div className="mb-4">
                       {lessons.length > 0 && (
-                        <Link to={`/lecture/${courseInfo.id}/${lessons[0].id}`} className="btn btn-primary w-full">
-                          Preview Course
+                        <Link to={`/courses/${courseInfo.id}/lessons/${lessons[0].id}`} className="btn btn-primary w-full">
+                          Start Learning
                         </Link>
                       )}
                     </div>
@@ -377,18 +377,19 @@ const CourseDetail = () => {
                 
                 <div className="space-y-4">
                   {lessons.map((lesson: Lesson, index: number) => (
-                    <div
+                    <Link
                       key={lesson.id}
-                      className="block border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+                      to={`/courses/${courseInfo.id}/lessons/${lesson.id}`}
+                      className="block border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:border-primary-400 dark:hover:border-primary-600 transition-colors"
                     >
-                      <div className="flex items-center justify-between w-full p-4 text-left font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700">
+                      <div className="flex items-center justify-between w-full p-4 text-left font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-650">
                         <div className="flex items-center">
                           <span className="text-primary-600 dark:text-primary-400 mr-3">{index + 1}.</span>
                           <span>{lesson.lessonName}</span>
                         </div>
                         <PlayCircle size={18} className="text-gray-500 dark:text-gray-400" />
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
