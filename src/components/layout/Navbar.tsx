@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Moon, BookOpen, User } from 'lucide-react';
+import { Menu, X, Sun, Moon, BookOpen, User, Briefcase } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import Logo from '../ui/Logo';
@@ -12,6 +12,7 @@ const Navbar = () => {
   const isHomePage = location.pathname === '/';
   const { isAuthenticated, user, logoutContext } = useAuth();
   const displayName = user?.name || user?.email?.split('@')[0] || 'User';
+  const userRole = localStorage.getItem('userRole');
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -52,6 +53,14 @@ const Navbar = () => {
                 className={`px-3 py-2 rounded-md text-sm font-medium ${isHomePage && !isScrolled ? 'text-white hover:bg-white/10' : 'text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
                 Courses
               </Link>
+              {/* My Courses Link (Chỉ hiện khi Đăng nhập và là Instructor) */}
+              {isAuthenticated && userRole === 'instructor' && (
+                <Link 
+                  to="/instructor/courses" 
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${isHomePage && !isScrolled ? 'text-white hover:bg-white/10' : 'text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
+                  My Courses
+                </Link>
+              )}
               {/* Dashboard Link (Chỉ hiện khi Đăng nhập) */}
               { isAuthenticated && (<Link 
                 to="/dashboard" 
@@ -121,6 +130,17 @@ const Navbar = () => {
               Courses
             </div>
           </Link>
+          {isAuthenticated && userRole === 'instructor' && (
+            <Link
+              to="/instructor/courses"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={closeMenu}>
+              <div className="flex items-center">
+                <Briefcase size={18} className="mr-2" />
+                My Courses
+              </div>
+            </Link>
+          )}
           <Link
             to="/dashboard"
             className="block px-3 py-2 rounded-md text-base font-medium text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"

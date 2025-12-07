@@ -31,12 +31,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 const loginContext = (userData: any, token: string) => {
     localStorage.setItem('userToken', token); // Lưu token
+    localStorage.setItem('userRole', userData.role || 'student'); // Lưu role
     setUser(userData);
     setIsAuthenticated(true);
 };
 
 const logoutContext = () => {
     localStorage.removeItem('userToken'); // Xóa token
+    localStorage.removeItem('userRole'); // Xóa role
     setUser(null);
     setIsAuthenticated(false);
 };

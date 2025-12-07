@@ -15,6 +15,8 @@ import NotFound from './pages/NotFound';
 import PublicCourses from './pages/PublicCourses';
 import CreateCourse from './pages/CreateCourse';
 import CreateQuizPage from "./pages/CreateQuiz";
+import InstructorCourses from './pages/InstructorCourses';
+import InstructorCourseDetail from './pages/InstructorCourseDetail';
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
@@ -44,6 +46,8 @@ function App() {
             <Route path="courses" element={<PublicCourses />} />
             <Route path="courses/create" element={<CreateCourse />} />
             <Route path="courses/:courseId" element={<CourseDetail />} />
+            <Route path="instructor/courses" element={<InstructorCourses />} />
+            <Route path="instructor/courses/:courseId" element={<InstructorCourseDetail />} />
             <Route path="signin" element={<SignIn />} />
             <Route path="signup" element={<SignUp />} />
             <Route path="dashboard" element={<Dashboard />} />
