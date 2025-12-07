@@ -193,6 +193,19 @@ const InstructorCourseDetail = () => {
     );
   }
 
+  const handleNavigateEditQuiz = async (quizId: string, courseId: string) =>{
+    try {
+
+      if (!quizId || !courseId){
+        return;
+      }
+      navigate(`/instructor/courses/${courseId}/quizzes/${quizId}/edit`)
+
+    }catch (err){
+      console.log(err)
+    }
+  }
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pt-16 pb-12">
       {/* Header */}
@@ -383,7 +396,8 @@ const InstructorCourseDetail = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors">
+                        <button onClick={() => handleNavigateEditQuiz(quiz.id, course.id)}
+                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors">
                           <Edit size={16} />
                         </button>
                         <button

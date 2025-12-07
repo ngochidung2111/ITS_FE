@@ -17,6 +17,7 @@ import PublicCourses from './pages/PublicCourses';
 import CreateCourse from './pages/CreateCourse';
 import InstructorCourses from './pages/InstructorCourses';
 import InstructorCourseDetail from './pages/InstructorCourseDetail';
+import InstructorEditQuizPage from './pages/InstructorEditQuizPage';
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
@@ -54,6 +55,7 @@ function App() {
             <Route path="lecture/:courseId/:lectureId" element={<VideoLecture />} />
             <Route path="courses/:courseId/lessons/:lessonId" element={<LessonContent />} />
             <Route path="courses/:courseId/quizzes/:quizId" element={<Quiz />} />
+            <Route path="instructor/courses/:courseId/quizzes/:quizId/edit" element={<InstructorEditQuizPage />}/>
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
