@@ -15,6 +15,7 @@ import LessonContent from './pages/LessonContent';
 import NotFound from './pages/NotFound';
 import PublicCourses from './pages/PublicCourses';
 import CreateCourse from './pages/CreateCourse';
+import CreateQuizPage from "./pages/CreateQuiz";
 import InstructorCourses from './pages/InstructorCourses';
 import InstructorCourseDetail from './pages/InstructorCourseDetail';
 import InstructorEditQuizPage from './pages/InstructorEditQuizPage';
@@ -56,6 +57,11 @@ function App() {
             <Route path="courses/:courseId/lessons/:lessonId" element={<LessonContent />} />
             <Route path="courses/:courseId/quizzes/:quizId" element={<Quiz />} />
             <Route path="instructor/courses/:courseId/quizzes/:quizId/edit" element={<InstructorEditQuizPage />}/>
+            <Route path="quiz/:quizId" element={<Quiz />} />
+            <Route
+              path=":courseId/create-new-quiz"
+              element={<CreateQuizPage />}
+            />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
