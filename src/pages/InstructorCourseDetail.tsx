@@ -17,6 +17,7 @@ import { courseApi, type Lesson, type Quiz, type LessonContent } from '../servic
 import ModalEditCourse from '../components/courses/ModalEditCourse';
 import ModalCreateLesson from '../components/lessons/ModalCreateLesson';
 import type { CreateLessonData } from '../types/course';
+import ModalCreateContent from '../components/lessons/ModalCreateContent';
 
 interface CourseDetail {
   id: string;
@@ -46,7 +47,9 @@ const InstructorCourseDetail = () => {
     description: '',
     price: ''
   });
+  const [lessionId, setLessionId] = useState('');
   const [isCreateLessonOpen, setIsCreateLessonOpen] = useState(false);
+  const [isOpenUploadContent, setIsOpenUploadContent] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -214,6 +217,18 @@ const InstructorCourseDetail = () => {
     }
   };
 
+  const handleUploaded = async (contentId: string, key: string) => {
+    console.log("Uploaded S3 Key:", key);
+    try {
+      await courseApi.confirmUploadContent(contentId, key);
+      alert("Content uploaded successfully");
+    }
+    catch(err){
+      console.log(err)
+      alert("Failed to upload content")
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
@@ -339,7 +354,12 @@ const InstructorCourseDetail = () => {
                           )}
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
-                          <button className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors">
+                          <button 
+                          onClick={() => {
+                            setIsOpenUploadContent(true)
+                            setLessionId(lesson.id)
+                          }} 
+                          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors">
                             <Edit size={16} />
                           </button>
                           <button
@@ -481,6 +501,9 @@ const InstructorCourseDetail = () => {
 
       {/* CREATE LESSON MODAL */}
       {isCreateLessonOpen && <ModalCreateLesson isOpen={isCreateLessonOpen} onClose={() => setIsCreateLessonOpen(false)} onSubmit={handleCreateLesson} />}
+
+      {/* CREATE CONTENT MODAL */}
+      {isOpenUploadContent && <ModalCreateContent isOpen={isOpenUploadContent} courseId={courseId!} lessonId={lessionId} onClose={() => setIsOpenUploadContent(false)} onUploaded={handleUploaded} />}
 
     </div>
 

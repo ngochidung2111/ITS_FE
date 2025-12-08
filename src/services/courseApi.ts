@@ -83,6 +83,13 @@ export interface QuizDetail extends Quiz {
   questions: QuizQuestion[];
 }
 
+export interface PresignedResponse {
+  contentId: string;
+  preSignedUrl: string;
+  key: string;
+  fields: Object;
+}
+
 export const courseApi = {
   /**
    * Get basic course info (title, description, price, status)
@@ -130,7 +137,10 @@ export const courseApi = {
   /**
    * Get quiz detail including questions and answers
    */
-  getQuizDetail: async (courseId: string, quizId: string): Promise<QuizDetail> => {
+  getQuizDetail: async (
+    courseId: string,
+    quizId: string
+  ): Promise<QuizDetail> => {
     const response = await apiClient.get<QuizDetail>(
       `/courses/${courseId}/quizzes/${quizId}`
     );
@@ -230,14 +240,27 @@ export const courseApi = {
     courseId: string,
     lessonId: string,
     contentData: Partial<LessonContent>
-  ): Promise<LessonContent> => {
-    const response = await apiClient.post<LessonContent>(
-      `/courses/${courseId}/lessons/${lessonId}/contents`,
+  ): Promise<PresignedResponse> => {
+    const response = await apiClient.post<PresignedResponse>(
+      `/courses/${courseId}/lessons/${lessonId}/content`,
       contentData
     );
     return response.data;
   },
 
+  /**
+   * Confirm upload media content
+   */
+  confirmUploadContent: async (
+    contentId: string,
+    key: string
+  ): Promise<void> => {
+    const response = await apiClient.post(
+      `courses/content/${contentId}/confirm`,
+      { key }
+    );
+    return response.data;
+  },
   /**
    * Update lesson content
    */
@@ -263,7 +286,7 @@ export const courseApi = {
     contentId: string
   ): Promise<void> => {
     await apiClient.delete(
-      `/courses/${courseId}/lessons/${lessonId}/contents/${contentId}`
+      `/courses/${courseId}/lessons/${lessonId}/content/${contentId}`
     );
   },
 
@@ -284,7 +307,11 @@ export const courseApi = {
   /**
    * Update a quiz
    */
-  updateQuiz: async (courseId: string, quizId: string, quizData: { quizName?: string; timeLimit?: number }): Promise<Quiz> => {
+  updateQuiz: async (
+    courseId: string,
+    quizId: string,
+    quizData: { quizName?: string; timeLimit?: number }
+  ): Promise<Quiz> => {
     const response = await apiClient.patch<Quiz>(
       `/courses/${courseId}/quizzes/${quizId}`,
       quizData
@@ -302,21 +329,29 @@ export const courseApi = {
   /**
    * Thêm Question mới vào Quiz
    */
-  createQuestion: async (courseId: string, quizId: string, questionData: Omit<QuizQuestion, 'id' | 'quizId'>): Promise<QuizQuestion> => {
-      const response = await apiClient.post<QuizQuestion>(
-          `/courses/${courseId}/quizzes/${quizId}/questions`,
-          questionData
-      );
-      return response.data;
+  createQuestion: async (
+    courseId: string,
+    quizId: string,
+    questionData: Omit<QuizQuestion, "id" | "quizId">
+  ): Promise<QuizQuestion> => {
+    const response = await apiClient.post<QuizQuestion>(
+      `/courses/${courseId}/quizzes/${quizId}/questions`,
+      questionData
+    );
+    return response.data;
   },
 
   /**
    * Xóa một Question cụ thể
    */
-  deleteQuestion: async (courseId: string, quizId: string, questionId: string): Promise<void> => {
-      await apiClient.delete(
-          `/courses/${courseId}/quizzes/${quizId}/questions/${questionId}`
-      );
+  deleteQuestion: async (
+    courseId: string,
+    quizId: string,
+    questionId: string
+  ): Promise<void> => {
+    await apiClient.delete(
+      `/courses/${courseId}/quizzes/${quizId}/questions/${questionId}`
+    );
   },
 
   /**
