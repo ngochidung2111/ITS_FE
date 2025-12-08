@@ -11,12 +11,14 @@ import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
 import VideoLecture from './pages/VideoLecture';
 import Quiz from './pages/Quiz';
+import LessonContent from './pages/LessonContent';
 import NotFound from './pages/NotFound';
 import PublicCourses from './pages/PublicCourses';
 import CreateCourse from './pages/CreateCourse';
 import CreateQuizPage from "./pages/CreateQuiz";
 import InstructorCourses from './pages/InstructorCourses';
 import InstructorCourseDetail from './pages/InstructorCourseDetail';
+import InstructorEditQuizPage from './pages/InstructorEditQuizPage';
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
@@ -51,10 +53,10 @@ function App() {
             <Route path="signin" element={<SignIn />} />
             <Route path="signup" element={<SignUp />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route
-              path="lecture/:courseId/:lectureId"
-              element={<VideoLecture />}
-            />
+            <Route path="lecture/:courseId/:lectureId" element={<VideoLecture />} />
+            <Route path="courses/:courseId/lessons/:lessonId" element={<LessonContent />} />
+            <Route path="courses/:courseId/quizzes/:quizId" element={<Quiz />} />
+            <Route path="instructor/courses/:courseId/quizzes/:quizId/edit" element={<InstructorEditQuizPage />}/>
             <Route path="quiz/:quizId" element={<Quiz />} />
             <Route
               path=":courseId/create-new-quiz"
