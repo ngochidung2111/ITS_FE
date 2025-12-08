@@ -391,7 +391,7 @@ const InstructorCourseDetail = () => {
                 <div className="text-center py-8">
                   <BookOpen size={48} className="mx-auto text-gray-400 dark:text-gray-600 mb-3" />
                   <p className="text-gray-600 dark:text-gray-400 mb-4">No lessons yet</p>
-                  <button className="btn btn-primary inline-flex items-center text-sm">
+                  <button onClick={() => setIsCreateLessonOpen(true)} className="btn btn-primary inline-flex items-center text-sm">
                     <Plus size={16} className="mr-1" />
                     Add Your First Lesson
                   </button>
