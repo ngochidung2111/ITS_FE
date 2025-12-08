@@ -245,7 +245,7 @@ export const courseApi = {
    * Delete lesson content
    */
   deleteLessonContent: async (courseId: string, lessonId: string, contentId: string): Promise<void> => {
-    await apiClient.delete(`/courses/${courseId}/lessons/${lessonId}/contents/${contentId}`);
+    await apiClient.delete(`/courses/${courseId}/lessons/${lessonId}/content/${contentId}`);
   },
 
   /**

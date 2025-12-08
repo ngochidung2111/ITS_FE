@@ -146,14 +146,14 @@ const InstructorCourseDetail = () => {
       setLoadingLessonId(lessonId);
       // Fetch the lesson with all its contents
       const lessonData = await courseApi.getLesson(courseId!, lessonId);
-      
+
       // Update the lesson in the state with the fetched data
       setLessons(
-        lessons.map(lesson => 
+        lessons.map(lesson =>
           lesson.id === lessonId ? lessonData : lesson
         )
       );
-      
+
       // Expand the lesson
       setExpandedLesson(lessonId);
     } catch (err) {
@@ -193,15 +193,15 @@ const InstructorCourseDetail = () => {
     );
   }
 
-  const handleNavigateEditQuiz = async (quizId: string, courseId: string) =>{
+  const handleNavigateEditQuiz = async (quizId: string, courseId: string) => {
     try {
 
-      if (!quizId || !courseId){
+      if (!quizId || !courseId) {
         return;
       }
       navigate(`/instructor/courses/${courseId}/quizzes/${quizId}/edit`)
 
-    }catch (err){
+    } catch (err) {
       console.log(err)
     }
   }
@@ -289,11 +289,20 @@ const InstructorCourseDetail = () => {
                           )}
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
-                          <button className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/instructor/courses/${courseId}/lessons/${lesson.id}/edit`);
+                            }}
+                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
+                          >
                             <Edit size={16} />
                           </button>
                           <button
-                            onClick={() => handleDeleteLesson(lesson.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteLesson(lesson.id);
+                            }}
                             disabled={deletingLessonId === lesson.id}
                             className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -397,7 +406,7 @@ const InstructorCourseDetail = () => {
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => handleNavigateEditQuiz(quiz.id, course.id)}
-                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors">
+                          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors">
                           <Edit size={16} />
                         </button>
                         <button

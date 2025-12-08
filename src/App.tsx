@@ -19,6 +19,7 @@ import CreateQuizPage from "./pages/CreateQuiz";
 import InstructorCourses from './pages/InstructorCourses';
 import InstructorCourseDetail from './pages/InstructorCourseDetail';
 import InstructorEditQuizPage from './pages/InstructorEditQuizPage';
+import EditLesson from './pages/EditLesson';
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
@@ -50,13 +51,14 @@ function App() {
             <Route path="courses/:courseId" element={<CourseDetail />} />
             <Route path="instructor/courses" element={<InstructorCourses />} />
             <Route path="instructor/courses/:courseId" element={<InstructorCourseDetail />} />
+            <Route path="instructor/courses/:courseId/lessons/:lessonId/edit" element={<EditLesson />} />
             <Route path="signin" element={<SignIn />} />
             <Route path="signup" element={<SignUp />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="lecture/:courseId/:lectureId" element={<VideoLecture />} />
             <Route path="courses/:courseId/lessons/:lessonId" element={<LessonContent />} />
             <Route path="courses/:courseId/quizzes/:quizId" element={<Quiz />} />
-            <Route path="instructor/courses/:courseId/quizzes/:quizId/edit" element={<InstructorEditQuizPage />}/>
+            <Route path="instructor/courses/:courseId/quizzes/:quizId/edit" element={<InstructorEditQuizPage />} />
             <Route path="quiz/:quizId" element={<Quiz />} />
             <Route
               path=":courseId/create-new-quiz"
