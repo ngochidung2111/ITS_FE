@@ -217,12 +217,19 @@ export const courseApi = {
     courseId: string,
     lessonId: string,
     contentData: Partial<LessonContent>
-  ): Promise<LessonContent> => {
-    const response = await apiClient.post<LessonContent>(
-      `/courses/${courseId}/lessons/${lessonId}/contents`,
+  ): Promise<LessonContent | any> => {
+    const response = await apiClient.post(
+      `/courses/${courseId}/lessons/${lessonId}/content`,
       contentData
     );
     return response.data;
+  },
+
+  /**
+   * Confirm media upload completion to S3
+   */
+  confirmMediaUpload: async (contentId: string, key: string): Promise<void> => {
+    await apiClient.post(`/courses/content/${contentId}/confirm`, { key });
   },
 
   /**

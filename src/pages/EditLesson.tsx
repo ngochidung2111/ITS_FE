@@ -30,9 +30,12 @@ const EditLesson = () => {
     // New content form
     const [showAddContent, setShowAddContent] = useState(false);
     const [newContentName, setNewContentName] = useState('');
-    const [newContentType, setNewContentType] = useState<'video' | 'text'>('text');
+    const [newContentType, setNewContentType] = useState<'video' | 'text' | 'media'>('text');
     const [newContentText, setNewContentText] = useState('');
     const [newContentUrl, setNewContentUrl] = useState('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         fetchLesson();
@@ -101,40 +104,222 @@ const EditLesson = () => {
             return;
         }
 
+        if (newContentType === 'media' && !selectedFile) {
+            setError('Please select a file to upload');
+            return;
+        }
+
         try {
             setSaving(true);
             setError(null);
 
-            const newContent = {
-                contentName: newContentName,
-                type: newContentType,
-                text: newContentType === 'text' ? newContentText : undefined,
-                url: newContentType === 'video' ? newContentUrl : undefined,
-            };
+            if (newContentType === 'media' && selectedFile) {
+                // Handle media upload with S3
+                await handleMediaUpload();
+            } else {
+                // Handle text or video URL content
+                const contentPayload = {
+                    contentName: newContentName,
+                    type: newContentType,
+                    order: contents.length + 1,
+                    ...(newContentType === 'text' && { text: newContentText }),
+                    ...(newContentType === 'video' && { url: newContentUrl })
+                };
 
-            // Note: You'll need to implement the add content API in courseApi
-            // const created = await courseApi.addLessonContent(courseId!, lessonId!, newContent);
+                const created = await courseApi.createLessonContent(courseId!, lessonId!, contentPayload);
+                setContents([...contents, created]);
 
-            // For now, we'll add it locally
-            const created = {
-                id: Date.now().toString(),
-                ...newContent,
-            } as LessonContent;
-
-            setContents([...contents, created]);
-
-            // Reset form
-            setNewContentName('');
-            setNewContentText('');
-            setNewContentUrl('');
-            setShowAddContent(false);
-            setSuccessMessage('Content added successfully!');
-            setTimeout(() => setSuccessMessage(null), 3000);
+                // Reset form
+                resetContentForm();
+                setSuccessMessage('Content added successfully!');
+                setTimeout(() => setSuccessMessage(null), 3000);
+            }
         } catch (err) {
             console.error('Failed to add content:', err);
             setError('Failed to add content. Please try again.');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleMediaUpload = async () => {
+        if (!selectedFile) return;
+
+        try {
+            setIsUploading(true);
+            setUploadProgress(0);
+
+            // Determine the content type based on file MIME type
+            const getContentType = (file: File): 'video' | 'audio' | 'image' => {
+                if (file.type.startsWith('video/')) return 'video';
+                if (file.type.startsWith('audio/')) return 'audio';
+                if (file.type.startsWith('image/')) return 'image';
+
+                // Fallback based on file extension
+                const ext = file.name.split('.').pop()?.toLowerCase();
+                if (['mp4', 'mov', 'avi', 'webm'].includes(ext || '')) return 'video';
+                if (['mp3', 'wav', 'ogg'].includes(ext || '')) return 'audio';
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) return 'image';
+
+                return 'video'; // default
+            };
+
+            // Step 1: Create content and get pre-signed S3 URL
+            const contentPayload = {
+                contentName: newContentName,
+                type: getContentType(selectedFile),
+                order: contents.length + 1
+            };
+
+            console.log('Step 1: Creating content with payload:', contentPayload);
+            const response = await courseApi.createLessonContent(courseId!, lessonId!, contentPayload);
+            console.log('Step 1 Response:', response);
+
+            // Response structure: { contentId, preSignedUrl, fields, key, message }
+            const { preSignedUrl, fields, key, contentId } = response as any;
+            const url = preSignedUrl;
+
+            if (!url || !fields || !key) {
+                console.error('Invalid response structure:', response);
+                throw new Error(`Invalid S3 upload response. Missing: ${!url ? 'preSignedUrl' : ''} ${!fields ? 'fields' : ''} ${!key ? 'key' : ''}`);
+            }
+
+            // Step 2: Upload file to S3 using pre-signed URL
+            const formData = new FormData();
+
+            // Add all fields from pre-signed URL response
+            Object.keys(fields).forEach(fieldKey => {
+                formData.append(fieldKey, fields[fieldKey]);
+            });
+
+            // Add the file last
+            formData.append('file', selectedFile);
+
+            console.log('Step 2: Uploading to S3 URL:', url);
+            console.log('FormData fields:', Object.keys(fields));
+
+            // Upload to S3
+            const uploadResponse = await fetch(url, {
+                method: 'POST',
+                body: formData,
+            });
+
+            console.log('Step 2 Upload response status:', uploadResponse.status);
+
+            if (!uploadResponse.ok) {
+                const errorText = await uploadResponse.text();
+                console.error('S3 upload failed:', errorText);
+                throw new Error(`Failed to upload file to S3: ${uploadResponse.status} ${errorText}`);
+            }
+
+            setUploadProgress(100);
+
+            // Step 3: Confirm upload completion
+            console.log('Step 3: Confirming upload with contentId:', contentId, 'key:', key);
+
+            await courseApi.confirmMediaUpload(contentId, key);
+            console.log('Step 3: Upload confirmed');
+
+            // Refresh lesson data to get the updated content with URL
+            const updatedLesson = await courseApi.getLesson(courseId!, lessonId!);
+            setContents(updatedLesson.contents || []);
+
+            // Reset form
+            resetContentForm();
+            setSuccessMessage('Media uploaded successfully!');
+            setTimeout(() => setSuccessMessage(null), 3000);
+
+        } catch (err: any) {
+            console.error('Failed to upload media:', err);
+            console.error('Error details:', {
+                message: err.message,
+                response: err.response?.data,
+                status: err.response?.status,
+                statusText: err.response?.statusText,
+                headers: err.response?.headers,
+                config: {
+                    url: err.config?.url,
+                    method: err.config?.method,
+                    data: err.config?.data
+                },
+                stack: err.stack
+            });
+
+            // Extract detailed error message
+            let errorMessage = 'Failed to upload media. Please try again.';
+
+            if (err.response?.data) {
+                const data = err.response.data;
+                if (typeof data === 'string') {
+                    errorMessage = data;
+                } else if (data.message) {
+                    errorMessage = Array.isArray(data.message)
+                        ? data.message.join(', ')
+                        : data.message;
+                } else if (data.error) {
+                    errorMessage = data.error;
+                }
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+
+            setError(errorMessage);
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(0);
+        }
+    };
+
+    const resetContentForm = () => {
+        setNewContentName('');
+        setNewContentText('');
+        setNewContentUrl('');
+        setSelectedFile(null);
+        setShowAddContent(false);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Validate file size (50MB limit)
+            const maxSize = 50 * 1024 * 1024; // 50MB
+            if (file.size > maxSize) {
+                setError('File size must be less than 50MB');
+                return;
+            }
+
+            // Validate file type - allow video, audio, image files
+            const allowedTypes = [
+                // Video
+                'video/mp4',
+                'video/quicktime',
+                'video/x-msvideo',
+                'video/webm',
+                // Audio
+                'audio/mpeg',
+                'audio/wav',
+                'audio/ogg',
+                // Images
+                'image/jpeg',
+                'image/png',
+                'image/gif',
+                'image/webp',
+                // Documents (if backend supports them as media)
+                'application/pdf'
+            ];
+
+            const isValidType = allowedTypes.includes(file.type) ||
+                file.type.startsWith('video/') ||
+                file.type.startsWith('audio/') ||
+                file.type.startsWith('image/');
+
+            if (!isValidType) {
+                setError('File type not supported. Allowed: Videos (MP4, MOV, etc.), Audio (MP3, WAV), Images (JPG, PNG, GIF), PDF');
+                return;
+            }
+
+            setSelectedFile(file);
+            setError(null);
         }
     };
 
@@ -314,11 +499,12 @@ const EditLesson = () => {
                                         </label>
                                         <select
                                             value={newContentType}
-                                            onChange={(e) => setNewContentType(e.target.value as 'video' | 'text')}
+                                            onChange={(e) => setNewContentType(e.target.value as 'video' | 'text' | 'media')}
                                             className="select"
                                         >
                                             <option value="text">Text</option>
-                                            <option value="video">Video</option>
+                                            <option value="video">Video URL</option>
+                                            <option value="media">Media Upload (PDF, DOC, MP4, etc.)</option>
                                         </select>
                                     </div>
 
@@ -352,21 +538,53 @@ const EditLesson = () => {
                                         </div>
                                     )}
 
+                                    {newContentType === 'media' && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Upload File <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="file"
+                                                onChange={handleFileChange}
+                                                accept="video/*,audio/*,image/*,.pdf"
+                                                className="block w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none"
+                                            />
+                                            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                                Supported: Videos (MP4, MOV, etc.), Audio (MP3, WAV), Images (JPG, PNG, GIF), PDF (Max 50MB)
+                                            </p>
+                                            {selectedFile && (
+                                                <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                                                    Selected: <span className="font-medium">{selectedFile.name}</span> ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                                                </div>
+                                            )}
+                                            {isUploading && uploadProgress > 0 && (
+                                                <div className="mt-3">
+                                                    <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                                        <span>Uploading...</span>
+                                                        <span>{uploadProgress}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                                        <div
+                                                            className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                                                            style={{ width: `${uploadProgress}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
                                     <div className="flex gap-3">
                                         <button
                                             onClick={handleAddContent}
-                                            disabled={saving}
+                                            disabled={saving || isUploading}
                                             className="btn btn-primary"
                                         >
-                                            {saving ? 'Adding...' : 'Add Content'}
+                                            {isUploading ? 'Uploading...' : saving ? 'Adding...' : 'Add Content'}
                                         </button>
                                         <button
-                                            onClick={() => {
-                                                setShowAddContent(false);
-                                                setNewContentName('');
-                                                setNewContentText('');
-                                                setNewContentUrl('');
-                                            }}
+                                            onClick={resetContentForm}
+                                            disabled={saving || isUploading}
                                             className="btn btn-secondary"
                                         >
                                             Cancel

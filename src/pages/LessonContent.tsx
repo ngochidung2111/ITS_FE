@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
+import {
+  ChevronLeft,
+  ChevronRight,
   BookOpen,
   FileText,
   Video,
@@ -16,7 +16,7 @@ import { courseApi, type Lesson, type LessonContent as LessonContentType, type C
 const LessonContent = () => {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
   const navigate = useNavigate();
-  
+
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [course, setCourse] = useState<CourseBasicInfo | null>(null);
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
@@ -110,7 +110,7 @@ const LessonContent = () => {
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
           {error || "The lesson you're looking for doesn't exist or has been removed."}
         </p>
-        <button 
+        <button
           onClick={() => navigate(-1)}
           className="btn btn-primary flex items-center"
         >
@@ -129,7 +129,7 @@ const LessonContent = () => {
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
           This lesson doesn't have any content yet.
         </p>
-        <Link 
+        <Link
           to={`/courses/${courseId}`}
           className="btn btn-primary flex items-center"
         >
@@ -146,7 +146,7 @@ const LessonContent = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <Link 
+            <Link
               to={`/courses/${courseId}`}
               className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:underline mb-2"
             >
@@ -187,8 +187,8 @@ const LessonContent = () => {
                     <div className="mb-6">
                       <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center">
                         {currentContent.url ? (
-                          <video 
-                            controls 
+                          <video
+                            controls
                             className="w-full h-full rounded-lg"
                             src={currentContent.url}
                           >
@@ -207,7 +207,7 @@ const LessonContent = () => {
                   {currentContent?.type === 'text' && (
                     <div className="prose dark:prose-invert max-w-none">
                       {currentContent.text ? (
-                        <div 
+                        <div
                           className="text-gray-700 dark:text-gray-300 leading-relaxed"
                           dangerouslySetInnerHTML={{ __html: currentContent.text }}
                         />
@@ -242,9 +242,8 @@ const LessonContent = () => {
                     <button
                       onClick={handlePrevious}
                       disabled={currentContentIndex === 0}
-                      className={`btn btn-outline flex items-center ${
-                        currentContentIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
+                      className={`btn btn-outline flex items-center ${currentContentIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
                     >
                       <ChevronLeft size={18} className="mr-2" />
                       Previous
@@ -285,26 +284,23 @@ const LessonContent = () => {
                     <button
                       key={content.id}
                       onClick={() => jumpToContent(index)}
-                      className={`w-full text-left p-3 rounded-lg transition-colors ${
-                        currentContentIndex === index
+                      className={`w-full text-left p-3 rounded-lg transition-colors ${currentContentIndex === index
                           ? 'bg-primary-100 dark:bg-primary-900/30 border-l-4 border-primary-600'
                           : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-650 border-l-4 border-transparent'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start">
-                        <div className={`mt-0.5 mr-3 ${
-                          currentContentIndex === index 
-                            ? 'text-primary-600 dark:text-primary-400' 
+                        <div className={`mt-0.5 mr-3 ${currentContentIndex === index
+                            ? 'text-primary-600 dark:text-primary-400'
                             : 'text-gray-500 dark:text-gray-400'
-                        }`}>
+                          }`}>
                           {getContentIcon(content.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`font-medium truncate ${
-                            currentContentIndex === index
+                          <p className={`font-medium truncate ${currentContentIndex === index
                               ? 'text-primary-900 dark:text-primary-100'
                               : 'text-gray-900 dark:text-white'
-                          }`}>
+                            }`}>
                             {content.contentName || 'Untitled'}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 uppercase">
@@ -328,7 +324,7 @@ const LessonContent = () => {
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-success-500 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${(completedContents.size / lesson.contents.length) * 100}%` }}
                     ></div>
