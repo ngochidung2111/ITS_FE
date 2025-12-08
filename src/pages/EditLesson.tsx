@@ -76,7 +76,7 @@ const EditLesson = () => {
             setError(null);
 
             await courseApi.updateLesson(courseId!, lessonId!, {
-                lessonName: lessonName,
+                title: lessonName,
                 order: lessonOrder
             });
 
