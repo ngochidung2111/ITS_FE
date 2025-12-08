@@ -75,8 +75,10 @@ const EditLesson = () => {
             setSaving(true);
             setError(null);
 
-            // Note: You'll need to implement the update lesson API in courseApi
-            // await courseApi.updateLesson(courseId!, lessonId!, { lessonName, order: lessonOrder });
+            await courseApi.updateLesson(courseId!, lessonId!, {
+                lessonName: lessonName,
+                order: lessonOrder
+            });
 
             setSuccessMessage('Lesson updated successfully!');
             setTimeout(() => setSuccessMessage(null), 3000);

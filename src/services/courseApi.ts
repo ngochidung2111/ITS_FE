@@ -196,7 +196,7 @@ export const courseApi = {
    * Update a lesson
    */
   updateLesson: async (courseId: string, lessonId: string, lessonData: { lessonName?: string; order?: number }): Promise<Lesson> => {
-    const response = await apiClient.put<Lesson>(
+    const response = await apiClient.patch<Lesson>(
       `/courses/${courseId}/lessons/${lessonId}`,
       lessonData
     );
