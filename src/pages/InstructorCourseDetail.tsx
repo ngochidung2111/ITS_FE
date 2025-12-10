@@ -14,6 +14,10 @@ import {
   Play
 } from 'lucide-react';
 import { courseApi, type Lesson, type Quiz, type LessonContent } from '../services/courseApi';
+import ModalEditCourse from '../components/courses/ModalEditCourse';
+import ModalCreateLesson from '../components/lessons/ModalCreateLesson';
+import type { CreateLessonData } from '../types/course';
+import ModalCreateContent from '../components/lessons/ModalCreateContent';
 
 interface CourseDetail {
   id: string;
@@ -37,6 +41,15 @@ const InstructorCourseDetail = () => {
   const [deletingContentId, setDeletingContentId] = useState<string | null>(null);
   const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
   const [loadingLessonId, setLoadingLessonId] = useState<string | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editData, setEditData] = useState({
+    title: '',
+    description: '',
+    price: ''
+  });
+  const [lessionId, setLessionId] = useState('');
+  const [isCreateLessonOpen, setIsCreateLessonOpen] = useState(false);
+  const [isOpenUploadContent, setIsOpenUploadContent] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -71,6 +84,16 @@ const InstructorCourseDetail = () => {
     fetchCourseData();
   }, [courseId]);
 
+  useEffect(() => {
+    if (course) {
+      setEditData({
+        title: course.title,
+        description: course.description,
+        price: course.price.toString()
+      });
+    }
+  }, [course]);
+
   const handleDeleteLesson = async (lessonId: string) => {
     if (!window.confirm('Are you sure you want to delete this lesson? This action cannot be undone.')) {
       return;
@@ -90,6 +113,36 @@ const InstructorCourseDetail = () => {
       setDeletingLessonId(null);
     }
   };
+
+  const handleUpdateCourse = async () => {
+    try {
+      const dto = {
+        title: editData.title,
+        description: editData.description,
+        price: Number(editData.price)
+      };
+
+      const updated = await courseApi.updateCourse(courseId!, dto);
+
+      setCourse(updated);
+      setIsEditOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update course");
+    }
+};
+
+  const handleCreateLesson = async (data: CreateLessonData) => {
+    try {
+      const newLesson = await courseApi.createLesson(courseId!, data);
+      setLessons([...lessons, newLesson]);
+      setIsCreateLessonOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create lesson");
+    }
+  };
+
 
   const handleDeleteContent = async (lessonId: string, contentId: string) => {
     if (!window.confirm('Are you sure you want to delete this content?')) {
@@ -164,6 +217,18 @@ const InstructorCourseDetail = () => {
     }
   };
 
+  const handleUploaded = async (contentId: string, key: string) => {
+    console.log("Uploaded S3 Key:", key);
+    try {
+      await courseApi.confirmUploadContent(contentId, key);
+      alert("Content uploaded successfully");
+    }
+    catch(err){
+      console.log(err)
+      alert("Failed to upload content")
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
@@ -225,7 +290,7 @@ const InstructorCourseDetail = () => {
                 <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
                 <p className="text-gray-300">${Number(course.price).toFixed(2)}</p>
               </div>
-              <button className="btn btn-primary">Edit Course</button>
+              <button onClick={() => setIsEditOpen(true)} className="btn btn-primary cursor-pointer">Edit Course</button>
             </div>
           </div>
         </div>
@@ -254,7 +319,7 @@ const InstructorCourseDetail = () => {
                   <BookOpen size={24} className="mr-3" />
                   Lessons ({lessons.length})
                 </h2>
-                <button className="btn btn-primary flex items-center text-sm">
+                <button onClick={() => setIsCreateLessonOpen(true)} className="btn btn-primary flex items-center text-sm">
                   <Plus size={16} className="mr-1" />
                   Add Lesson
                 </button>
@@ -289,7 +354,12 @@ const InstructorCourseDetail = () => {
                           )}
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
-                          <button className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors">
+                          <button 
+                          onClick={() => {
+                            setIsOpenUploadContent(true)
+                            setLessionId(lesson.id)
+                          }} 
+                          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors">
                             <Edit size={16} />
                           </button>
                           <button
@@ -354,7 +424,7 @@ const InstructorCourseDetail = () => {
                 <div className="text-center py-8">
                   <BookOpen size={48} className="mx-auto text-gray-400 dark:text-gray-600 mb-3" />
                   <p className="text-gray-600 dark:text-gray-400 mb-4">No lessons yet</p>
-                  <button className="btn btn-primary inline-flex items-center text-sm">
+                  <button onClick={() => setIsCreateLessonOpen(true)} className="btn btn-primary inline-flex items-center text-sm">
                     <Plus size={16} className="mr-1" />
                     Add Your First Lesson
                   </button>
@@ -425,7 +495,22 @@ const InstructorCourseDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* EDIT COURSE MODAL */}
+      {isEditOpen && <ModalEditCourse editData={editData} setEditData={setEditData} setIsEditOpen={setIsEditOpen} handleUpdateCourse={handleUpdateCourse} />}
+
+      {/* CREATE LESSON MODAL */}
+      {isCreateLessonOpen && <ModalCreateLesson isOpen={isCreateLessonOpen} onClose={() => setIsCreateLessonOpen(false)} onSubmit={handleCreateLesson} />}
+
+      {/* CREATE CONTENT MODAL */}
+      {isOpenUploadContent && <ModalCreateContent isOpen={isOpenUploadContent} courseId={courseId!} lessonId={lessionId} onClose={() => setIsOpenUploadContent(false)} onUploaded={handleUploaded} />}
+
     </div>
+
+
+    
+
+    
   );
 };
 

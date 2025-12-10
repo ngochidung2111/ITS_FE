@@ -42,3 +42,18 @@ export interface GetCourseDetailDto {
     }[];
   }[];
 }
+
+export type ContentType = "text" | "video" | "audio" | "image";
+
+export interface Content {
+  order?: number;
+  contentName: string;
+  type: ContentType;
+  text?: string;
+}
+
+export interface CreateLessonData {
+  lessonName: string;
+  order?: number;
+  contents?: Content[];
+}
